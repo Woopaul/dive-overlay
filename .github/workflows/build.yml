@@ -1,0 +1,41 @@
+name: Build executables
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            artifact: DiveOverlay-mac
+            exe_path: dist/DiveOverlay.app
+          - os: windows-latest
+            artifact: DiveOverlay-windows
+            exe_path: dist/DiveOverlay.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install fitparse pyinstaller pillow
+
+      - name: Build with PyInstaller
+        run: pyinstaller dive_overlay.spec
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.exe_path }}
