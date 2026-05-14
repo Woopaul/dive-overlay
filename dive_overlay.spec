@@ -3,15 +3,20 @@
 #   Mac:     pyinstaller dive_overlay.spec
 #   Windows: pyinstaller dive_overlay.spec
 
+import os
 import sys
 from PyInstaller.building.build_main import Analysis, PYZ, EXE, BUNDLE, COLLECT
 
 block_cipher = None
 
+# Include ffprobe binary if present (downloaded by CI or placed manually)
+_ffprobe_name = "ffprobe.exe" if sys.platform == "win32" else "ffprobe"
+_ffprobe_binaries = [(_ffprobe_name, ".")] if os.path.exists(_ffprobe_name) else []
+
 a = Analysis(
     ["gui.py"],
     pathex=["."],
-    binaries=[],
+    binaries=_ffprobe_binaries,
     datas=[],
     hiddenimports=["fitparse", "fitparse.processors", "fitparse.utils", "uddf_parser", "csv_parser", "xml.etree.ElementTree"],
     hookspath=[],

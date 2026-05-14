@@ -2,12 +2,22 @@
 
 import json
 import os
+import sys
 import subprocess
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-# .app bundles on Mac don't inherit the shell PATH, so ffprobe (installed via
-# Homebrew or other package managers) may not be on the default search path.
+# When running as a PyInstaller bundle, ffprobe is placed next to the executable.
+# On Mac .app bundles the shell PATH is not inherited, so also check Homebrew paths.
+def _bundled_ffprobe() -> str | None:
+    """Return path to ffprobe bundled inside a PyInstaller package, or None."""
+    if not hasattr(sys, "_MEIPASS"):
+        return None
+    name = "ffprobe.exe" if sys.platform == "win32" else "ffprobe"
+    path = os.path.join(sys._MEIPASS, name)
+    return path if os.path.exists(path) else None
+
+
 _FFPROBE_CANDIDATES = [
     "ffprobe",                          # already on PATH (script / Windows)
     "/opt/homebrew/bin/ffprobe",        # Homebrew on Apple Silicon
@@ -17,6 +27,9 @@ _FFPROBE_CANDIDATES = [
 
 
 def _find_ffprobe() -> str:
+    bundled = _bundled_ffprobe()
+    if bundled:
+        return bundled
     for candidate in _FFPROBE_CANDIDATES:
         try:
             result = subprocess.run(

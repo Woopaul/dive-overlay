@@ -28,8 +28,27 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: pip install fitparse pyinstaller pillow
+
+      # ── Mac: ffprobe via Homebrew ──────────────────────────────────────────
+      - name: Get ffprobe (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install ffmpeg
+          cp $(which ffprobe) ffprobe
+
+      # ── Windows: ffprobe from BtbN static build ────────────────────────────
+      - name: Get ffprobe (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+          Invoke-WebRequest $url -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffmpeg_extracted
+          $src = Get-ChildItem -Path ffmpeg_extracted -Filter ffprobe.exe -Recurse | Select-Object -First 1
+          Copy-Item $src.FullName ffprobe.exe
+          Remove-Item ffmpeg.zip, ffmpeg_extracted -Recurse -Force
 
       - name: Build with PyInstaller
         run: pyinstaller dive_overlay.spec
